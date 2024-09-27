@@ -10,8 +10,6 @@
 ErlNifResourceType* DB_HANDLE_TYPE;
 ErlNifResourceType* STMT_HANDLE_TYPE;
 
-typedef union ErliteType ET;
-
 static void db_handle_dtor(ErlNifEnv* env, void* res) {
   sqlite3_close(*(sqlite3**)res);
 }
