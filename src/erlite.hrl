@@ -1,0 +1,4 @@
+-define(SQLITE_OK, 0).
+-define(SQLITE_ROW, 100).
+-define(SQLITE_DONE, 101).
+-define(ERLITE_VERSION, {0, 1, 0}).
