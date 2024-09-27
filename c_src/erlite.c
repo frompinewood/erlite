@@ -1,15 +1,14 @@
+/* erlite.c 
+ *
+ * Based on "Using C in Elixir with NIFs" by Andrea Leopardi
+ * https://andrealeopardi.com/posts/using-c-from-elixir-with-nifs/ 
+ * */
 #include <erl_nif.h>
 #include <sqlite3.h>
 #include <string.h>
 
 ErlNifResourceType* DB_HANDLE_TYPE;
 ErlNifResourceType* STMT_HANDLE_TYPE;
-
-union ErliteType {
-  int i;
-  char* c;
-  double d;
-};
 
 typedef union ErliteType ET;
 
