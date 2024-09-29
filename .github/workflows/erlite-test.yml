@@ -4,6 +4,10 @@ on: [push]
 jobs:
   run-tests:
     runs-on: ubuntu-latest
+    container: erlang:27.0.1
     steps:
       - run: echo "Job was automatically triggered by ${{ github.event_name }}."
+      - run: apk add sqlite
+      - run: apk add pkgconfig
+      - run: rebar3 do eunit, ct 
 
