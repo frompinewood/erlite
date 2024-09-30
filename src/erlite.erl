@@ -104,7 +104,10 @@ exec(Db, Query, Binding) when is_list(Query) ->
                     Result;
                 Error ->
                     Error
-            end
+            end;
+        {ok, Stmt, _Remaining} ->
+            erlite:finalize(Stmt),
+            {error, "Multiple statements not yet supported."}
     end.
 
 exec_bind(Stmt, Binding) ->
@@ -148,6 +151,13 @@ prepare_test() ->
     {ok, Stmt} = erlite:prepare(Db, "CREATE TABLE test (id int, name text)"),
     ok = erlite:finalize(Stmt),
     ok = erlite:close(Db).
+
+prepare_multiple_test() ->
+  {ok, Db} = erlite:open(),
+  {ok, Stmt, " INSERT INTO test (id, name) VALUES (1, 'test')"} = 
+    erlite:prepare(Db, "CREATE TABLE test (id int, name text); INSERT INTO test (id, name) VALUES (1, 'test')"),
+  ok = erlite:finalize(Stmt),
+  ok = erlite:close(Db).
 
 step_test() ->
     {ok, Db} = erlite:open(),
@@ -269,6 +279,10 @@ result_binary_test() ->
     ok = erlite:finalize(Stmt2),
     ok = erlite:close(Db).
 
+multi_statement_test() ->
+  {ok, Db} = erlite:open(),
+  {error, _} = erlite:exec(Db, "CREATE TABLE test (id int, name blob); INSERT INTO test (id, blob) VALUES (1, ?)", [<<"name">>]).
+
 exec_test() ->
     {ok, Db} = erlite:open(),
     [] = erlite:exec(Db, "CREATE TABLE test (id int, name text)"),
@@ -276,7 +290,8 @@ exec_test() ->
     [] = erlite:exec(Db, "INSERT INTO test VALUES (1, NULL)"),
     [[{id, 0}, {name, "testname"}], [{id, 1}, {name, null}]] = erlite:exec(
         Db, "SELECT id, name FROM test"
-    ).
+    ),
+    ok = erlite:close(Db).
 
 exec_bind_test() ->
     {ok, Db} = erlite:open(),
@@ -285,4 +300,5 @@ exec_bind_test() ->
     [] = erlite:exec(Db, "INSERT INTO test VALUES (1, NULL)"),
     [[{id, 0}, {name, "testname"}], [{id, 1}, {name, null}]] = erlite:exec(
         Db, "SELECT id, name FROM test"
-    ).
+    ),
+    ok = erlite:close(Db).

@@ -26,6 +26,12 @@ static int on_load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_data) {
   return 0;
 }
 
+static int on_upgrade(ErlNifEnv* env, void** old_priv_data, void** priv_data, ERL_NIF_TERM load_data) {
+  enif_fprintf(stderr, "New Version: %I\r\n", load_data);
+  *priv_data = *old_priv_data;
+  return 0;
+}
+
 static ERL_NIF_TERM erlite_stmt_error(ErlNifEnv* env, sqlite3_stmt* stmt) {
   return enif_make_tuple2(env, 
           enif_make_atom(env, "error"), 
@@ -64,18 +70,22 @@ static ERL_NIF_TERM erlite_prepare(ErlNifEnv* env, int argc, const ERL_NIF_TERM 
 
   unsigned int length;
   if (!enif_get_string_length(env, argv[1], &length, ERL_NIF_UTF8)) return enif_make_badarg(env);
-  length++;
-  char query[length];
+  char query[++length];
   if (!enif_get_string(env, argv[1], query, length, ERL_NIF_UTF8)) return enif_make_badarg(env);
 
   sqlite3_stmt* stmt;
   sqlite3_stmt** stmt_res;
 
-  if (sqlite3_prepare_v2(db, query, length, &stmt, NULL) != SQLITE_OK) 
+  const char* remain = NULL;
+
+  if (sqlite3_prepare_v2(db, query, length, &stmt, &remain) != SQLITE_OK) 
     return enif_make_tuple2(env, enif_make_atom(env, "error"), enif_make_string(env, sqlite3_errmsg(db), ERL_NIF_UTF8));
 
   stmt_res = enif_alloc_resource(STMT_HANDLE_TYPE, sizeof(sqlite3_stmt*));
   *stmt_res = stmt;
+
+  if (strlen(remain) > 0)
+    return enif_make_tuple3(env, enif_make_atom(env, "ok"), enif_make_resource(env, stmt_res), enif_make_string(env, remain, ERL_NIF_UTF8));
 
   return enif_make_tuple2(env, enif_make_atom(env, "ok"), enif_make_resource(env, stmt_res));
 }
@@ -282,4 +292,4 @@ static ErlNifFunc nif_funcs[] = {
   {"column_name", 2, erlite_column_name}
 };
 
-ERL_NIF_INIT(erlite, nif_funcs, on_load, NULL, NULL, NULL)
+ERL_NIF_INIT(erlite, nif_funcs, on_load, NULL, on_upgrade, NULL)
